@@ -37,7 +37,6 @@ end
 local function destroy_lsp(lsp_id)
     local cl = vim.lsp.get_client_by_id(lsp_id)
     if cl then
-        vim.notify(tostring(lsp_id) .. " is stopping")
         cl:stop(true)
     end
 
@@ -86,7 +85,7 @@ local function removeByValue(t, v)
 end
 
 function M.on_win_unfocus()
-    vim.notify("Schedule timer to destroy all lsp.", vim.log.levels.DEBUG)
+    vim.notify("Schedule timer to destroy all LSP.", vim.log.levels.DEBUG)
     window_unactive_timer = uv.new_timer()
 
     window_unactive_timer:start(settings.current.timeout, 0, function()
@@ -108,30 +107,28 @@ function M.on_win_unfocus()
         end
 
         destroy_win_timer()
-        vim.notify("Destroy all lsp.", vim.log.levels.INFO)
+        vim.notify("Destroy all LSP.", vim.log.levels.INFO)
     end)
 end
 
 function M.on_win_focus()
     destroy_win_timer()
-    vim.notify("Destroy window timer.", vim.log.levels.DEBUG)
+    vim.notify("Destroy the timer scheduled when unfocus window.", vim.log.levels.DEBUG)
 
     local cur_buf = vim.api.nvim_get_current_buf()
-    -- focusしたbufのlspを復元する
     for cl_name, cl_data in pairs(attached) do
         if removeByValue(cl_data.buffers, cur_buf) then
             vim.notify("Attach LSP [" .. cl_name .. "] to buf " .. cur_buf, vim.log.levels.DEBUG)
             local cls = vim.lsp.get_clients({ name = cl_name })
-            vim.notify("cls: " .. tostring(#cls))
             if #cls == 0 then
                 vim.notify("Launching LSP [" .. cl_name .. "]", vim.log.levels.INFO)
                 vim.lsp.start(cl_data.config, {
                     bufnr = cur_buf,
                     silent = true,
                 })
-            else
+            else if #cls == 1 then
                 vim.notify("Attaching existing LSP [" .. cl_name .. "] to buf " .. cur_buf, vim.log.levels.DEBUG)
-                vim.lsp.buf_attach_client(cl_name, cur_buf)
+                vim.lsp.buf_attach_client(cls[1].id, cur_buf)
             end
 
             if #cl_data.buffers == 0 then
@@ -158,7 +155,7 @@ function M.on_lsp_detach(lsp_id)
         vim.schedule(function()
             destroy_lsp(lsp_id)
         end)
-        vim.notify("Destroy lsp [" .. cl.name .. "]", vim.log.levels.INFO)
+        vim.notify("Destroy LSP [" .. cl.name .. "]", vim.log.levels.INFO)
     end)
 end
 

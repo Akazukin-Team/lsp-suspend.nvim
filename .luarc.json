@@ -1,0 +1,11 @@
+{
+  "schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+  "runtime": ["lua/?.lua"],
+  "workspace.library": ["/usr/local/share/nvim/runtime/lua"],
+  "format.enable": false,
+  "workspace.checkThirdParty": false,
+  "diagnostics": {
+    "globals": ["vim", "Snacks"]
+  },
+  "runtime.version": "Lua 5.2"
+}

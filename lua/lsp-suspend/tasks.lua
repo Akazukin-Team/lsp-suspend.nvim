@@ -126,7 +126,7 @@ function M.on_win_focus()
                     bufnr = cur_buf,
                     silent = true,
                 })
-            else if #cls == 1 then
+            elseif #cls == 1 then
                 vim.notify("Attaching existing LSP [" .. cl_name .. "] to buf " .. cur_buf, vim.log.levels.DEBUG)
                 vim.lsp.buf_attach_client(cls[1].id, cur_buf)
             end

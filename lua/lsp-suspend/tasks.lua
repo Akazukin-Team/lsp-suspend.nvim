@@ -1,10 +1,11 @@
 local uv = vim.uv
 local settings = require("lsp-suspend.settings")
+local array_utils = require("lsp-suspend.utils.array")
 
 local M = {}
 
 local timers = {}
-local attached = {}
+local lsps = {}
 local window_unactive_timer
 
 local function get_or_new_timer(lsp_id)
@@ -53,37 +54,6 @@ local function destroy_win_timer()
     window_unactive_timer = nil
 end
 
---- get keys from table
----@param tbl table
----@return table
-local function get_keys(tbl)
-    local keys = {}
-    for k, _ in pairs(tbl) do
-        table.insert(keys, k)
-    end
-    return keys
-end
-
-local function has_value(t, val)
-    for _, value in ipairs(t) do
-        if value == val then
-            return true
-        end
-    end
-    return false
-end
-
-local function removeByValue(t, v)
-    local res = false
-    for i = #t, 1, -1 do
-        if t[i] == v then
-            res = true
-            table.remove(t, i)
-        end
-    end
-    return res
-end
-
 function M.on_win_unfocus()
     vim.notify("Schedule timer to destroy all LSP.", vim.log.levels.DEBUG)
     window_unactive_timer = uv.new_timer()
@@ -94,9 +64,34 @@ function M.on_win_unfocus()
                 goto continue
             end
 
-            attached[cl.name] = {
+            local cl_data
+            if lsps[cl.name] then
+                cl_data = lsps[cl.name]
+
+                local ok = vim.wait(1000 * 1000 * 1000, function()
+                    return not cl_data.lock
+                end)
+                if not ok then
+                    vim.notify("", vim.log.levels.ERROR)
+                    return
+                end
+            else
+                lsps[cl.name] = {}
+		cl_data = 
+            end
+
+            lsps[cl.name].lock = true
+
+            local buffers
+            if lsps[cl.name] then
+                buffers = array_utils.append(array_utils.get_keys(cl.attached_buffers), lsps[cl.name].buffers)
+            else
+                buffers = array_utils.get_keys(cl.attached_buffers)
+            end
+
+            lsps[cl.name] = {
                 config = cl.config,
-                buffers = get_keys(cl.attached_buffers),
+                buffers = buffers,
             }
 
             vim.schedule(function()
@@ -116,8 +111,10 @@ function M.on_win_focus()
     vim.notify("Destroy the timer scheduled when unfocus window.", vim.log.levels.DEBUG)
 
     local cur_buf = vim.api.nvim_get_current_buf()
-    for cl_name, cl_data in pairs(attached) do
-        if removeByValue(cl_data.buffers, cur_buf) then
+    for cl_name, cl_data in pairs(lsps) do
+        if array_utils.removeByValue(cl_data.buffers, cur_buf) then
+            array_utils.removeByValue(cl_data.buffers, cur_buf)
+
             vim.notify("Attach LSP [" .. cl_name .. "] to buf " .. cur_buf, vim.log.levels.DEBUG)
             local cls = vim.lsp.get_clients({ name = cl_name })
             if #cls == 0 then
@@ -132,7 +129,7 @@ function M.on_win_focus()
             end
 
             if #cl_data.buffers == 0 then
-                attached[cl_name] = nil
+                lsps[cl_name] = nil
             end
         end
     end

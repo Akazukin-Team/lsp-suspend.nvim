@@ -7,5 +7,5 @@
   "diagnostics": {
     "globals": ["vim", "Snacks"]
   },
-  "runtime.version": "Lua 5.2"
+  "runtime.version": "Lua 5.3"
 }

@@ -77,7 +77,7 @@ function M.on_win_unfocus()
                 end
             else
                 lsps[cl.name] = {}
-		cl_data = 
+                cl_data = lsps[cl.name]
             end
 
             lsps[cl.name].lock = true

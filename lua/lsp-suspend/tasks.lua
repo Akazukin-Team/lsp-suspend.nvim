@@ -106,6 +106,34 @@ function M.on_win_unfocus()
     end)
 end
 
+function M.on_buf_enter(buf)
+    vim.notify("Destroy the timer scheduled when unfocus window.", vim.log.levels.DEBUG)
+
+    for cl_name, cl_data in pairs(lsps) do
+        if array_utils.removeByValue(cl_data.buffers, buf) then
+            array_utils.removeByValue(cl_data.buffers, buf)
+
+            vim.notify("Attach LSP [" .. cl_name .. "] to buf " .. buf, vim.log.levels.DEBUG)
+            local cls = vim.lsp.get_clients({ name = cl_name })
+            if #cls == 0 then
+                vim.notify("Launching LSP [" .. cl_name .. "]", vim.log.levels.INFO)
+                vim.lsp.start(cl_data.config, {
+                    bufnr = buf,
+                    silent = true,
+                })
+            elseif #cls == 1 then
+                vim.notify("Attaching existing LSP [" .. cl_name .. "] to buf " .. buf, vim.log.levels.DEBUG)
+                destroy_lsp_timer(cls[1].id)
+                vim.lsp.buf_attach_client(cls[1].id, buf)
+            end
+
+            if #cl_data.buffers == 0 then
+                lsps[cl_name] = nil
+            end
+        end
+    end
+end
+
 function M.on_win_focus()
     destroy_win_timer()
     vim.notify("Destroy the timer scheduled when unfocus window.", vim.log.levels.DEBUG)
@@ -125,6 +153,7 @@ function M.on_win_focus()
                 })
             elseif #cls == 1 then
                 vim.notify("Attaching existing LSP [" .. cl_name .. "] to buf " .. cur_buf, vim.log.levels.DEBUG)
+                destroy_lsp_timer(cls[1].id)
                 vim.lsp.buf_attach_client(cls[1].id, cur_buf)
             end
 

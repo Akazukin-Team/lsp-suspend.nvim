@@ -25,12 +25,18 @@ create_autocmd("FocusLost", {
     end,
 })
 
+vim.api.nvim_create_autocmd("BufEnter", {
+    callback = function()
+        local buf = vim.api.nvim_get_current_buf()
+        tasks.on_buf_enter(buf)
+    end,
+})
+
 create_autocmd("LspAttach", {
     callback = function(args)
         tasks.on_lsp_attach(args.data.client_id)
     end,
 })
-
 create_autocmd("LspDetach", {
     callback = function(args)
         tasks.on_lsp_detach(args.data.client_id)

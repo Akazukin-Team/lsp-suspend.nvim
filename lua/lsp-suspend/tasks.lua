@@ -1,6 +1,7 @@
 local uv = vim.uv
 local settings = require("lsp-suspend.settings")
 local array_utils = require("lsp-suspend.utils.array")
+local task = require("lsp-suspend.utils.task")
 
 local M = {}
 
@@ -68,7 +69,7 @@ function M.on_win_unfocus()
             if lsps[cl.name] then
                 cl_data = lsps[cl.name]
 
-                local ok = vim.wait(1000 * 1000 * 1000, function()
+                local ok = task.wait(1000 * 1000 * 1000, function()
                     return not cl_data.lock
                 end)
                 if not ok then

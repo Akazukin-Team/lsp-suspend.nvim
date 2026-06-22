@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Luac ${{ env.LUA_VERSION }}
         run: sudo apt install lua${{ env.LUA_VERSION }}
